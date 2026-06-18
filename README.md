@@ -23,6 +23,10 @@ This custom integration provides control over Bose Commercial Sound Processor (C
 1. Copy the `custom_components/bose_csp/` directory into your Home Assistant `config/custom_components/` folder.
 2. Restart Home Assistant.
 
+## Important Note
+
+The Bose CSP Web API only allows one active configuration session at a time. If the Web Dashboard is open in a browser, auto-discovery will fail. Ensure the Web Dashboard is closed before attempting integration setup.
+
 ## Configuration
 
 1. Go to **Settings** -> **Devices & Services**.
