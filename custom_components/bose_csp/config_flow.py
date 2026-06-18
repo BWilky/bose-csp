@@ -37,6 +37,7 @@ class BoseCSPConfigFlow(ConfigFlow, domain=DOMAIN):
 
     def __init__(self) -> None:
         """Initialize the config flow."""
+        super().__init__()
         self._host: str = ""
         self._min_db: float = -60.0
         self._max_db: float = 12.0
@@ -54,11 +55,11 @@ class BoseCSPConfigFlow(ConfigFlow, domain=DOMAIN):
             self._min_db = user_input[CONF_MIN_DB]
             self._max_db = user_input[CONF_MAX_DB]
 
-            await self.async_set_unique_id(self._host)
-            self._abort_if_unique_id_configured()
-
-            # Attempt WebSocket auto-discovery
             try:
+                await self.async_set_unique_id(self._host)
+                self._abort_if_unique_id_configured()
+
+                # Attempt WebSocket auto-discovery
                 discovery_data = await discover_zones_and_sources(self._host)
             except BoseCSPConnectionError as err:
                 _LOGGER.warning(
@@ -66,6 +67,20 @@ class BoseCSPConfigFlow(ConfigFlow, domain=DOMAIN):
                     err,
                 )
                 return await self.async_step_manual()
+            except Exception as err:  # pylint: disable=broad-except
+                _LOGGER.exception("Unexpected error during auto-discovery: %s", err)
+                errors["base"] = "unknown"
+                return self.async_show_form(
+                    step_id="user",
+                    data_schema=vol.Schema(
+                        {
+                            vol.Required(CONF_HOST): str,
+                            vol.Optional(CONF_MIN_DB, default=-60.0): vol.Coerce(float),
+                            vol.Optional(CONF_MAX_DB, default=12.0): vol.Coerce(float),
+                        }
+                    ),
+                    errors=errors,
+                )
 
             self._discovered_zones = [
                 z for z in discovery_data.get("zones", []) if z.get("enabled")
