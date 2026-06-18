@@ -89,15 +89,16 @@ async def test_flow_discovery_failure_fallback(
     assert result["type"] is FlowResultType.FORM
     assert result["step_id"] == "user"
 
-    # Submit IP address. Discovery fails and we should fall back to manual setup step.
-    result = await hass.config_entries.flow.async_configure(
-        result["flow_id"],
-        {
-            "host": "10.50.0.70",
-        },
-    )
+    with patch("homeassistant.components.bose_csp.config_flow.asyncio.sleep") as mock_sleep:
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"],
+            {
+                "host": "10.50.0.70",
+            },
+        )
     assert result["type"] is FlowResultType.FORM
     assert result["step_id"] == "manual"
+    assert result["errors"] == {"base": "discovery_failed"}
 
     # Mock connection test for manual setup
     mock_device.connect.side_effect = None
@@ -136,13 +137,15 @@ async def test_flow_manual_connection_failure(
         DOMAIN, context={"source": SOURCE_USER}
     )
     # Enter host
-    result = await hass.config_entries.flow.async_configure(
-        result["flow_id"],
-        {
-            "host": "10.50.0.70",
-        },
-    )
+    with patch("homeassistant.components.bose_csp.config_flow.asyncio.sleep") as mock_sleep:
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"],
+            {
+                "host": "10.50.0.70",
+            },
+        )
     assert result["step_id"] == "manual"
+    assert result["errors"] == {"base": "discovery_failed"}
 
     # Submit manual config, connection fails
     result = await hass.config_entries.flow.async_configure(
@@ -226,3 +229,42 @@ async def test_options_flow(hass: HomeAssistant) -> None:
         "other_interval": 60,
         "reconnect_delay": 15,
     }
+
+
+async def test_flow_discovery_zero_limits_fallback(
+    hass: HomeAssistant, mock_device, mock_discovery
+) -> None:
+    """Test config flow with discovery returning zero or invalid limits correctly falls back."""
+    mock_discovery.return_value["zones"][0]["min_gain"] = 0.0
+    mock_discovery.return_value["zones"][0]["max_gain"] = 0.0
+    mock_discovery.return_value["zones"][1]["min_gain"] = 10.0
+    mock_discovery.return_value["zones"][1]["max_gain"] = -10.0  # Invalid min > max
+
+    result = await hass.config_entries.flow.async_init(
+        DOMAIN, context={"source": SOURCE_USER}
+    )
+    assert result["type"] is FlowResultType.FORM
+    assert result["step_id"] == "user"
+
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"],
+        {
+            "host": "10.50.0.70",
+        },
+    )
+    assert result["step_id"] == "select_entities"
+
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"],
+        {
+            "zones": ["Bar", "Patio"],
+            "sources": ["Sonos", "Aux"],
+        },
+    )
+    assert result["type"] is FlowResultType.CREATE_ENTRY
+    # Both zones should have fallen back to default limits -60.0 and 12.0
+    assert result["data"]["zone_limits"] == {
+        "Bar": {"min_db": -60.0, "max_db": 12.0},
+        "Patio": {"min_db": -60.0, "max_db": 12.0},
+    }
+

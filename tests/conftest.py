@@ -2,33 +2,31 @@
 
 import os
 import sys
-from unittest.mock import MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 
 # Ensure the custom_components directory is in sys.path
 sys.path.insert(
+    0, os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+)
+sys.path.insert(
     0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../custom_components"))
 )
 
-# Map homeassistant.components.bose_csp to local bose_csp for local execution
-import bose_csp
+# Map homeassistant.components.bose_csp to custom_components.bose_csp for local execution
+import custom_components.bose_csp as custom_bose_csp
+import custom_components.bose_csp.const
+import custom_components.bose_csp.coordinator
+import custom_components.bose_csp.config_flow
+import custom_components.bose_csp.media_player
+import custom_components.bose_csp.entity
 
-sys.modules["homeassistant.components.bose_csp"] = bose_csp
-sys.modules["homeassistant.components.bose_csp.const"] = sys.modules.get(
-    "bose_csp.const"
-)
-sys.modules["homeassistant.components.bose_csp.coordinator"] = sys.modules.get(
-    "bose_csp.coordinator"
-)
-sys.modules["homeassistant.components.bose_csp.config_flow"] = sys.modules.get(
-    "bose_csp.config_flow"
-)
-sys.modules["homeassistant.components.bose_csp.media_player"] = sys.modules.get(
-    "bose_csp.media_player"
-)
-sys.modules["homeassistant.components.bose_csp.entity"] = sys.modules.get(
-    "bose_csp.entity"
-)
+sys.modules["homeassistant.components.bose_csp"] = custom_bose_csp
+sys.modules["homeassistant.components.bose_csp.const"] = custom_bose_csp.const
+sys.modules["homeassistant.components.bose_csp.coordinator"] = custom_bose_csp.coordinator
+sys.modules["homeassistant.components.bose_csp.config_flow"] = custom_bose_csp.config_flow
+sys.modules["homeassistant.components.bose_csp.media_player"] = custom_bose_csp.media_player
+sys.modules["homeassistant.components.bose_csp.entity"] = custom_bose_csp.entity
 
 from pybosecsp import ZoneState
 
@@ -52,8 +50,8 @@ def mock_device():
         device = mock_root_device.return_value
         device.host = "10.50.0.70"
         device.is_connected = True
-        device.connect = MagicMock()
-        device.disconnect = MagicMock()
+        device.connect = AsyncMock()
+        device.disconnect = AsyncMock()
 
         # Default mock states
         states = {
@@ -67,9 +65,9 @@ def mock_device():
         device.subscribe_availability = MagicMock()
         device.unsubscribe_updates = MagicMock()
         device.unsubscribe_availability = MagicMock()
-        device.set_volume = MagicMock()
-        device.set_mute = MagicMock()
-        device.set_source = MagicMock()
+        device.set_volume = AsyncMock()
+        device.set_mute = AsyncMock()
+        device.set_source = AsyncMock()
 
         # Make other mocks return the same instance for consistency
         mock_flow_device.return_value = device
@@ -88,7 +86,7 @@ def mock_discovery():
             "zones": [
                 {
                     "label": "Bar",
-                    "zoneId": 1,
+                    "id": 1,
                     "enabled": True,
                     "min_gain": -60.0,
                     "max_gain": 12.0,
@@ -96,18 +94,47 @@ def mock_discovery():
                 },
                 {
                     "label": "Patio",
-                    "zoneId": 2,
+                    "id": 2,
                     "enabled": True,
                     "min_gain": -45.0,
                     "max_gain": 0.0,
                     "gain": -20.0,
                 },
-                {"label": "Disabled Zone", "zoneId": 3, "enabled": False},
+                {"label": "Disabled Zone", "id": 3, "enabled": False},
             ],
             "sources": [
-                {"label": "Sonos", "sourceId": 1, "enabled": True},
-                {"label": "Aux", "sourceId": 2, "enabled": True},
-                {"label": "Disabled Source", "sourceId": 3, "enabled": False},
+                {"label": "Sonos", "id": 1, "enabled": True},
+                {"label": "Aux", "id": 2, "enabled": True},
+                {"label": "Disabled Source", "id": 3, "enabled": False},
             ],
         }
         yield mock
+
+
+@pytest.fixture(autouse=True)
+def auto_enable_custom_integrations(enable_custom_integrations):
+    """Enable custom integrations for testing."""
+    yield
+
+
+@pytest.fixture(autouse=True, scope="session")
+def link_custom_component():
+    """Link local custom component to the testing_config directory."""
+    import os
+    import pytest_homeassistant_custom_component
+    pkg_dir = os.path.dirname(pytest_homeassistant_custom_component.__file__)
+    dest_dir = os.path.join(pkg_dir, "testing_config", "custom_components", "bose_csp")
+    src_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "../custom_components/bose_csp"))
+    
+    if not os.path.exists(dest_dir):
+        try:
+            os.symlink(src_dir, dest_dir)
+            yield
+            try:
+                os.unlink(dest_dir)
+            except OSError:
+                pass
+        except Exception:
+            yield
+    else:
+        yield

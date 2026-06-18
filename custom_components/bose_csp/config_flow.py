@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import logging
 from typing import Any
 
@@ -9,6 +10,7 @@ from pybosecsp import BoseCSPConnectionError, BoseCSPDevice, discover_zones_and_
 import voluptuous as vol
 
 from homeassistant.config_entries import ConfigEntry, ConfigFlow, ConfigFlowResult, OptionsFlow
+from homeassistant.data_entry_flow import AbortFlow
 from homeassistant.const import CONF_HOST
 from homeassistant.core import callback
 from homeassistant.helpers import selector
@@ -43,6 +45,7 @@ class BoseCSPConfigFlow(ConfigFlow, domain=DOMAIN):
         self._max_db: float = 12.0
         self._discovered_zones: list[dict[str, Any]] = []
         self._discovered_sources: list[dict[str, Any]] = []
+        self._discovery_failed: bool = False
 
     async def async_step_user(
         self, user_input: dict[str, Any] | None = None
@@ -57,14 +60,31 @@ class BoseCSPConfigFlow(ConfigFlow, domain=DOMAIN):
                 await self.async_set_unique_id(self._host)
                 self._abort_if_unique_id_configured()
 
-                # Attempt WebSocket auto-discovery
-                discovery_data = await discover_zones_and_sources(self._host)
-            except BoseCSPConnectionError as err:
+                # Attempt WebSocket auto-discovery with retries
+                discovery_data = None
+                for attempt in range(4):
+                    try:
+                        discovery_data = await discover_zones_and_sources(self._host)
+                        break
+                    except BoseCSPConnectionError as err:
+                        _LOGGER.warning(
+                            "Auto-discovery attempt %d/4 failed for %s: %s",
+                            attempt + 1,
+                            self._host,
+                            err,
+                        )
+                        if attempt < 3:
+                            await asyncio.sleep(1)
+                        else:
+                            raise err
+            except BoseCSPConnectionError:
                 _LOGGER.warning(
-                    "Auto-discovery failed: %s. Falling back to manual configuration.",
-                    err,
+                    "Auto-discovery failed after 4 attempts. Falling back to manual configuration."
                 )
+                self._discovery_failed = True
                 return await self.async_step_manual()
+            except AbortFlow:
+                raise
             except Exception as err:  # pylint: disable=broad-except
                 _LOGGER.exception("Unexpected error during auto-discovery: %s", err)
                 errors["base"] = "unknown"
@@ -89,6 +109,7 @@ class BoseCSPConfigFlow(ConfigFlow, domain=DOMAIN):
                 _LOGGER.warning(
                     "No enabled zones discovered. Falling back to manual configuration."
                 )
+                self._discovery_failed = True
                 return await self.async_step_manual()
 
             return await self.async_step_select_entities()
@@ -119,9 +140,14 @@ class BoseCSPConfigFlow(ConfigFlow, domain=DOMAIN):
                 if label in selected_zones:
                     min_gain = zone.get("min_gain")
                     max_gain = zone.get("max_gain")
+                    z_min = float(min_gain) if min_gain is not None else self._min_db
+                    z_max = float(max_gain) if max_gain is not None else self._max_db
+                    if z_min >= z_max or (z_min == 0.0 and z_max == 0.0):
+                        z_min = self._min_db
+                        z_max = self._max_db
                     zone_limits[label] = {
-                        "min_db": float(min_gain) if min_gain is not None else self._min_db,
-                        "max_db": float(max_gain) if max_gain is not None else self._max_db,
+                        "min_db": z_min,
+                        "max_db": z_max,
                     }
 
             source_mapping = {}
@@ -176,6 +202,8 @@ class BoseCSPConfigFlow(ConfigFlow, domain=DOMAIN):
     ) -> ConfigFlowResult:
         """Handle manual configuration fallback."""
         errors: dict[str, str] = {}
+        if self._discovery_failed and user_input is None:
+            errors["base"] = "discovery_failed"
 
         if user_input is not None:
             zones_str = user_input[CONF_ZONES]
@@ -228,6 +256,11 @@ class BoseCSPConfigFlow(ConfigFlow, domain=DOMAIN):
 
 class BoseCSPOptionsFlowHandler(OptionsFlow):
     """Handle options flow for Bose CSP."""
+
+    def __init__(self, config_entry: ConfigEntry) -> None:
+        """Initialize options flow."""
+        super().__init__()
+        self.config_entry = config_entry
 
     async def async_step_init(
         self, user_input: dict[str, Any] | None = None
