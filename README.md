@@ -1,5 +1,8 @@
 # Bose CSP Integration for Home Assistant
 
+
+# See https://github.com/BWilky/bose-csp for native HA integration
+
 This custom integration provides control over Bose Commercial Sound Processor (CSP) devices from Home Assistant.
 
 ## Features
