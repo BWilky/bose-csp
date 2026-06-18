@@ -6,7 +6,7 @@ import asyncio
 import logging
 from typing import Any
 
-from pybosecsp import BoseCSPConnectionError, BoseCSPDevice, discover_zones_and_sources
+from pybosecsp import BoseCSPConnectionError, discover_zones_and_sources
 import voluptuous as vol
 
 from homeassistant.config_entries import ConfigEntry, ConfigFlow, ConfigFlowResult, OptionsFlow
@@ -74,7 +74,7 @@ class BoseCSPConfigFlow(ConfigFlow, domain=DOMAIN):
                             err,
                         )
                         if attempt < 3:
-                            await asyncio.sleep(1)
+                            await asyncio.sleep(3)
                         else:
                             raise err
             except BoseCSPConnectionError:
@@ -206,29 +206,21 @@ class BoseCSPConfigFlow(ConfigFlow, domain=DOMAIN):
             errors["base"] = "discovery_failed"
 
         if user_input is not None:
-            zones_str = user_input[CONF_ZONES]
-            zones_list = [zone.strip() for zone in zones_str.split(",")]
             self._min_db = user_input[CONF_MIN_DB]
             self._max_db = user_input[CONF_MAX_DB]
 
-            device = BoseCSPDevice(self._host, zones_list)
-            try:
-                await device.connect()
-                await device.disconnect()
-            except BoseCSPConnectionError as err:
-                _LOGGER.error("Failed to connect to %s: %s", self._host, err)
-                errors["base"] = "cannot_connect"
-            else:
-                return self.async_create_entry(
-                    title=self._host,
-                    data={
-                        CONF_HOST: self._host,
-                        CONF_ZONES: user_input[CONF_ZONES],
-                        CONF_SOURCES: user_input[CONF_SOURCES],
-                        CONF_MIN_DB: self._min_db,
-                        CONF_MAX_DB: self._max_db,
-                    },
-                )
+            # Connectivity is validated when the entry is set up (the
+            # coordinator connects on first refresh), so no probe here.
+            return self.async_create_entry(
+                title=self._host,
+                data={
+                    CONF_HOST: self._host,
+                    CONF_ZONES: user_input[CONF_ZONES],
+                    CONF_SOURCES: user_input[CONF_SOURCES],
+                    CONF_MIN_DB: self._min_db,
+                    CONF_MAX_DB: self._max_db,
+                },
+            )
 
         manual_schema = vol.Schema(
             {

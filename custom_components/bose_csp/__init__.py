@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import logging
 
 from pybosecsp import BoseCSPDevice
@@ -55,6 +56,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: BoseCSPConfigEntry) -> b
 
     coordinator = BoseCSPCoordinator(hass, device)
 
+    # Allow DSP network stack to settle after WebSocket discovery
+    await asyncio.sleep(2)
     await coordinator.async_config_entry_first_refresh()
 
     entry.runtime_data = BoseCSPData(

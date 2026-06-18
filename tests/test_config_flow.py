@@ -1,6 +1,6 @@
 """Test the Bose CSP config flow."""
 
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 from pybosecsp import BoseCSPConnectionError
 import pytest
 
@@ -100,10 +100,7 @@ async def test_flow_discovery_failure_fallback(
     assert result["step_id"] == "manual"
     assert result["errors"] == {"base": "discovery_failed"}
 
-    # Mock connection test for manual setup
-    mock_device.connect.side_effect = None
-
-    # Submit manual entries
+    # Submit manual entries (connectivity is validated at setup, not here)
     result = await hass.config_entries.flow.async_configure(
         result["flow_id"],
         {
@@ -122,42 +119,6 @@ async def test_flow_discovery_failure_fallback(
         "min_db": -60.0,
         "max_db": 12.0,
     }
-
-
-async def test_flow_manual_connection_failure(
-    hass: HomeAssistant, mock_device, mock_discovery
-) -> None:
-    """Test config flow manual fallback with connection error."""
-    mock_discovery.side_effect = BoseCSPConnectionError("Discovery fails")
-    mock_device.connect.side_effect = BoseCSPConnectionError(
-        "TCP connection fails"
-    )
-
-    result = await hass.config_entries.flow.async_init(
-        DOMAIN, context={"source": SOURCE_USER}
-    )
-    # Enter host
-    with patch("homeassistant.components.bose_csp.config_flow.asyncio.sleep") as mock_sleep:
-        result = await hass.config_entries.flow.async_configure(
-            result["flow_id"],
-            {
-                "host": "10.50.0.70",
-            },
-        )
-    assert result["step_id"] == "manual"
-    assert result["errors"] == {"base": "discovery_failed"}
-
-    # Submit manual config, connection fails
-    result = await hass.config_entries.flow.async_configure(
-        result["flow_id"],
-        {
-            "zones": "Zone 1",
-            "sources": "Source 1",
-        },
-    )
-    assert result["type"] is FlowResultType.FORM
-    assert result["step_id"] == "manual"
-    assert result["errors"] == {"base": "cannot_connect"}
 
 
 async def test_flow_duplicate_abort(
