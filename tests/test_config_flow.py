@@ -37,13 +37,11 @@ async def test_flow_discovery_success(
     assert result["type"] is FlowResultType.FORM
     assert result["step_id"] == "user"
 
-    # Submit IP address and default volume limits
+    # Submit IP address
     result = await hass.config_entries.flow.async_configure(
         result["flow_id"],
         {
             "host": "10.50.0.70",
-            "min_db": -60.0,
-            "max_db": 12.0,
         },
     )
     # Since discovery succeeds, it must redirect to select_entities
@@ -96,8 +94,6 @@ async def test_flow_discovery_failure_fallback(
         result["flow_id"],
         {
             "host": "10.50.0.70",
-            "min_db": -60.0,
-            "max_db": 12.0,
         },
     )
     assert result["type"] is FlowResultType.FORM
@@ -112,6 +108,8 @@ async def test_flow_discovery_failure_fallback(
         {
             "zones": "Zone 1, Zone 2",
             "sources": "Source 1, Source 2",
+            "min_db": -60.0,
+            "max_db": 12.0,
         },
     )
     assert result["type"] is FlowResultType.CREATE_ENTRY
@@ -142,8 +140,6 @@ async def test_flow_manual_connection_failure(
         result["flow_id"],
         {
             "host": "10.50.0.70",
-            "min_db": -60.0,
-            "max_db": 12.0,
         },
     )
     assert result["step_id"] == "manual"
@@ -185,8 +181,6 @@ async def test_flow_duplicate_abort(
         result["flow_id"],
         {
             "host": "10.50.0.70",
-            "min_db": -60.0,
-            "max_db": 12.0,
         },
     )
     assert result["type"] is FlowResultType.ABORT

@@ -52,8 +52,6 @@ class BoseCSPConfigFlow(ConfigFlow, domain=DOMAIN):
 
         if user_input is not None:
             self._host = user_input[CONF_HOST]
-            self._min_db = user_input[CONF_MIN_DB]
-            self._max_db = user_input[CONF_MAX_DB]
 
             try:
                 await self.async_set_unique_id(self._host)
@@ -75,8 +73,6 @@ class BoseCSPConfigFlow(ConfigFlow, domain=DOMAIN):
                     data_schema=vol.Schema(
                         {
                             vol.Required(CONF_HOST): str,
-                            vol.Optional(CONF_MIN_DB, default=-60.0): vol.Coerce(float),
-                            vol.Optional(CONF_MAX_DB, default=12.0): vol.Coerce(float),
                         }
                     ),
                     errors=errors,
@@ -102,8 +98,6 @@ class BoseCSPConfigFlow(ConfigFlow, domain=DOMAIN):
             data_schema=vol.Schema(
                 {
                     vol.Required(CONF_HOST): str,
-                    vol.Optional(CONF_MIN_DB, default=-60.0): vol.Coerce(float),
-                    vol.Optional(CONF_MAX_DB, default=12.0): vol.Coerce(float),
                 }
             ),
             errors=errors,
@@ -186,6 +180,8 @@ class BoseCSPConfigFlow(ConfigFlow, domain=DOMAIN):
         if user_input is not None:
             zones_str = user_input[CONF_ZONES]
             zones_list = [zone.strip() for zone in zones_str.split(",")]
+            self._min_db = user_input[CONF_MIN_DB]
+            self._max_db = user_input[CONF_MAX_DB]
 
             device = BoseCSPDevice(self._host, zones_list)
             try:
@@ -210,6 +206,8 @@ class BoseCSPConfigFlow(ConfigFlow, domain=DOMAIN):
             {
                 vol.Required(CONF_ZONES): str,
                 vol.Required(CONF_SOURCES): str,
+                vol.Optional(CONF_MIN_DB, default=-60.0): vol.Coerce(float),
+                vol.Optional(CONF_MAX_DB, default=12.0): vol.Coerce(float),
             }
         )
 

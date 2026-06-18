@@ -3,11 +3,9 @@
     "step": {
       "user": {
         "title": "Connect to Bose CSP",
-        "description": "Enter the IP address and default volume limits for your processor. The integration will attempt to auto-discover your zones and sources.",
+        "description": "Enter the IP address of your processor. The integration will attempt to auto-discover your zones and sources.",
         "data": {
-          "host": "[%key:common::config_flow::data::host%]",
-          "min_db": "Default Minimum Volume (dB)",
-          "max_db": "Default Maximum Volume (dB)"
+          "host": "[%key:common::config_flow::data::host%]"
         }
       },
       "select_entities": {
@@ -20,10 +18,12 @@
       },
       "manual": {
         "title": "Manual Configuration",
-        "description": "Auto-discovery failed or could not find any zones. Please enter the configured zones and sources manually.",
+        "description": "Auto-discovery failed or could not find any zones. Please enter the configured zones, sources, and default volume limits manually.",
         "data": {
           "zones": "Zones (comma-separated, e.g. Bar, Lobby, Patio)",
-          "sources": "Sources (comma-separated, e.g. Wireless Mic, Sonos, Aux)"
+          "sources": "Sources (comma-separated, e.g. Wireless Mic, Sonos, Aux)",
+          "min_db": "Default Minimum Volume (dB)",
+          "max_db": "Default Maximum Volume (dB)"
         }
       }
     },
