@@ -34,5 +34,17 @@
     "abort": {
       "already_configured": "[%key:common::config_flow::abort::already_configured_device%]"
     }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Bose CSP Settings",
+        "data": {
+          "volume_interval": "Volume Polling Interval (seconds)",
+          "other_interval": "Mute/Source Polling Interval (seconds)",
+          "reconnect_delay": "Reconnection Delay (seconds)"
+        }
+      }
+    }
   }
 }

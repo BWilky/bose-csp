@@ -9,7 +9,18 @@ from pybosecsp import BoseCSPDevice
 from homeassistant.const import CONF_HOST, Platform
 from homeassistant.core import HomeAssistant
 
-from .const import CONF_MAX_DB, CONF_MIN_DB, CONF_SOURCES, CONF_ZONES
+from .const import (
+    CONF_MAX_DB,
+    CONF_MIN_DB,
+    CONF_OTHER_INTERVAL,
+    CONF_RECONNECT_DELAY,
+    CONF_SOURCES,
+    CONF_VOLUME_INTERVAL,
+    CONF_ZONES,
+    DEFAULT_OTHER_INTERVAL,
+    DEFAULT_RECONNECT_DELAY,
+    DEFAULT_VOLUME_INTERVAL,
+)
 from .coordinator import BoseCSPConfigEntry, BoseCSPCoordinator, BoseCSPData
 
 _LOGGER = logging.getLogger(__name__)
@@ -29,7 +40,18 @@ async def async_setup_entry(hass: HomeAssistant, entry: BoseCSPConfigEntry) -> b
     min_db: float = entry.data[CONF_MIN_DB]
     max_db: float = entry.data[CONF_MAX_DB]
 
-    device = BoseCSPDevice(host, zones_list)
+    # Parse options with defaults
+    volume_interval = entry.options.get(CONF_VOLUME_INTERVAL, DEFAULT_VOLUME_INTERVAL)
+    other_interval = entry.options.get(CONF_OTHER_INTERVAL, DEFAULT_OTHER_INTERVAL)
+    reconnect_delay = entry.options.get(CONF_RECONNECT_DELAY, DEFAULT_RECONNECT_DELAY)
+
+    device = BoseCSPDevice(
+        host,
+        zones_list,
+        volume_interval=volume_interval,
+        other_interval=other_interval,
+        reconnect_delay=reconnect_delay,
+    )
 
     coordinator = BoseCSPCoordinator(hass, device)
 
@@ -42,6 +64,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: BoseCSPConfigEntry) -> b
         min_db=min_db,
         max_db=max_db,
     )
+
+    # Register options update listener
+    entry.async_on_unload(entry.add_update_listener(update_listener))
 
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
 
@@ -58,3 +83,9 @@ async def async_unload_entry(
     await entry.runtime_data.device.disconnect()
 
     return True
+
+
+async def update_listener(hass: HomeAssistant, entry: BoseCSPConfigEntry) -> None:
+    """Handle options update."""
+    _LOGGER.debug("Reloading Bose CSP integration due to options update")
+    await hass.config_entries.async_reload(entry.entry_id)

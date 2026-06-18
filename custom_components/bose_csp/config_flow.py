@@ -5,13 +5,27 @@ from __future__ import annotations
 import logging
 from typing import Any
 
-from pybosecsp import BoseCSPConnectionError, BoseCSPDevice
+from pybosecsp import BoseCSPConnectionError, BoseCSPDevice, discover_zones_and_sources
 import voluptuous as vol
 
-from homeassistant.config_entries import ConfigFlow, ConfigFlowResult
+from homeassistant.config_entries import ConfigEntry, ConfigFlow, ConfigFlowResult, OptionsFlow
 from homeassistant.const import CONF_HOST
+from homeassistant.core import callback
+from homeassistant.helpers import selector
 
-from .const import CONF_MAX_DB, CONF_MIN_DB, CONF_SOURCES, CONF_ZONES, DOMAIN
+from .const import (
+    CONF_MAX_DB,
+    CONF_MIN_DB,
+    CONF_OTHER_INTERVAL,
+    CONF_RECONNECT_DELAY,
+    CONF_SOURCES,
+    CONF_VOLUME_INTERVAL,
+    CONF_ZONES,
+    DEFAULT_OTHER_INTERVAL,
+    DEFAULT_RECONNECT_DELAY,
+    DEFAULT_VOLUME_INTERVAL,
+    DOMAIN,
+)
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -189,3 +203,47 @@ class BoseCSPConfigFlow(ConfigFlow, domain=DOMAIN):
             data_schema=manual_schema,
             errors=errors,
         )
+
+    @staticmethod
+    @callback
+    def async_get_options_flow(
+        config_entry: ConfigEntry,
+    ) -> BoseCSPOptionsFlowHandler:
+        """Get the options flow for this handler."""
+        return BoseCSPOptionsFlowHandler(config_entry)
+
+
+class BoseCSPOptionsFlowHandler(OptionsFlow):
+    """Handle options flow for Bose CSP."""
+
+    async def async_step_init(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Manage the options."""
+        if user_input is not None:
+            return self.async_create_entry(title="", data=user_input)
+
+        options_schema = vol.Schema(
+            {
+                vol.Optional(
+                    CONF_VOLUME_INTERVAL,
+                    default=self.config_entry.options.get(
+                        CONF_VOLUME_INTERVAL, DEFAULT_VOLUME_INTERVAL
+                    ),
+                ): vol.All(vol.Coerce(int), vol.Range(min=1, max=60)),
+                vol.Optional(
+                    CONF_OTHER_INTERVAL,
+                    default=self.config_entry.options.get(
+                        CONF_OTHER_INTERVAL, DEFAULT_OTHER_INTERVAL
+                    ),
+                ): vol.All(vol.Coerce(int), vol.Range(min=5, max=300)),
+                vol.Optional(
+                    CONF_RECONNECT_DELAY,
+                    default=self.config_entry.options.get(
+                        CONF_RECONNECT_DELAY, DEFAULT_RECONNECT_DELAY
+                    ),
+                ): vol.All(vol.Coerce(int), vol.Range(min=1, max=60)),
+            }
+        )
+
+        return self.async_show_form(step_id="init", data_schema=options_schema)

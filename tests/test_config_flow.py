@@ -191,3 +191,44 @@ async def test_flow_duplicate_abort(
     )
     assert result["type"] is FlowResultType.ABORT
     assert result["reason"] == "already_configured"
+
+
+async def test_options_flow(hass: HomeAssistant) -> None:
+    """Test updating options via options flow."""
+    entry = MockConfigEntry(
+        domain=DOMAIN,
+        unique_id="10.50.0.70",
+        data={
+            "host": "10.50.0.70",
+            "zones": "Bar, Patio",
+            "sources": "Sonos, Aux",
+            "min_db": -60.0,
+            "max_db": 12.0,
+        },
+        options={
+            "volume_interval": 5,
+            "other_interval": 30,
+            "reconnect_delay": 5,
+        },
+    )
+    entry.add_to_hass(hass)
+
+    result = await hass.config_entries.options.async_init(entry.entry_id)
+    assert result["type"] is FlowResultType.FORM
+    assert result["step_id"] == "init"
+
+    # Submit updated options
+    result = await hass.config_entries.options.async_configure(
+        result["flow_id"],
+        {
+            "volume_interval": 10,
+            "other_interval": 60,
+            "reconnect_delay": 15,
+        },
+    )
+    assert result["type"] is FlowResultType.CREATE_ENTRY
+    assert result["data"] == {
+        "volume_interval": 10,
+        "other_interval": 60,
+        "reconnect_delay": 15,
+    }
