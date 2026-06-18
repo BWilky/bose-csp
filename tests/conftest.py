@@ -5,8 +5,10 @@ import sys
 from unittest.mock import MagicMock, patch
 import pytest
 
-# Ensure the parent directory is in sys.path
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+# Ensure the custom_components directory is in sys.path
+sys.path.insert(
+    0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../custom_components"))
+)
 
 # Map homeassistant.components.bose_csp to local bose_csp for local execution
 import bose_csp
