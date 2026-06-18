@@ -1,0 +1,163 @@
+rules:
+  # Bronze
+  action-setup:
+    status: exempt
+    comment: Integration does not register custom actions.
+  appropriate-polling:
+    status: done
+    comment: |
+      Integration uses local_push via TCP callbacks.
+      No polling interval is set on the coordinator.
+  brands:
+    status: todo
+    comment: Brand assets need to be added to the brands repository.
+  common-modules:
+    status: done
+    comment: Uses coordinator.py and entity.py base class.
+  config-flow:
+    status: done
+    comment: Config flow implemented with connection test.
+  config-flow-test-coverage:
+    status: todo
+    comment: Tests not yet written.
+  dependency-transparency:
+    status: done
+    comment: Uses py-bose-csp PyPI package.
+  docs-actions:
+    status: exempt
+    comment: No custom actions.
+  docs-high-level-description:
+    status: todo
+    comment: Documentation not yet written.
+  docs-installation-instructions:
+    status: todo
+    comment: Documentation not yet written.
+  docs-removal-instructions:
+    status: todo
+    comment: Documentation not yet written.
+  entity-event-setup:
+    status: exempt
+    comment: No event entities.
+  entity-unique-id:
+    status: done
+    comment: Unique ID is host-zone_name.
+  has-entity-name:
+    status: done
+    comment: _attr_has_entity_name = True on base entity.
+  runtime-data:
+    status: done
+    comment: Uses ConfigEntry.runtime_data with BoseCSPData dataclass.
+  test-before-configure:
+    status: done
+    comment: Config flow tests connection before creating entry.
+  test-before-setup:
+    status: done
+    comment: async_setup_entry connects and raises ConfigEntryNotReady on failure.
+  unique-config-entry:
+    status: done
+    comment: Uses host as unique ID, aborts if already configured.
+
+  # Silver
+  config-entry-unloading:
+    status: done
+    comment: async_unload_entry disconnects device and unloads platforms.
+  log-when-unavailable:
+    status: done
+    comment: Coordinator logs availability changes.
+  entity-unavailable:
+    status: done
+    comment: CoordinatorEntity handles unavailability automatically.
+  action-exceptions:
+    status: done
+    comment: Commands catch BoseCSPCommandError and log errors.
+  reauthentication-flow:
+    status: exempt
+    comment: No authentication required for this device.
+  parallel-updates:
+    status: todo
+    comment: Not yet configured.
+  test-coverage:
+    status: todo
+    comment: Tests not yet written.
+  integration-owner:
+    status: done
+    comment: "@BWilky listed as codeowner."
+  docs-configuration-parameters:
+    status: todo
+    comment: Documentation not yet written.
+  docs-troubleshooting:
+    status: todo
+    comment: Documentation not yet written.
+
+  # Gold
+  devices:
+    status: done
+    comment: Device info provided with identifiers, manufacturer, model.
+  diagnostics:
+    status: todo
+    comment: Diagnostics not yet implemented.
+  discovery:
+    status: todo
+    comment: Manual configuration only.
+  discovery-update-info:
+    status: todo
+    comment: Not implemented.
+  docs-data-update:
+    status: todo
+    comment: Documentation not yet written.
+  docs-examples:
+    status: todo
+    comment: Documentation not yet written.
+  docs-known-limitations:
+    status: todo
+    comment: Documentation not yet written.
+  docs-supported-devices:
+    status: todo
+    comment: Documentation not yet written.
+  docs-supported-functions:
+    status: todo
+    comment: Documentation not yet written.
+  docs-use-cases:
+    status: todo
+    comment: Documentation not yet written.
+  dynamic-devices:
+    status: exempt
+    comment: Device zones are configured at setup time.
+  entity-category:
+    status: exempt
+    comment: All entities are primary media player entities.
+  entity-device-class:
+    status: exempt
+    comment: MediaPlayerEntity does not use device classes.
+  entity-disabled-by-default:
+    status: exempt
+    comment: All entities should be enabled by default.
+  entity-translations:
+    status: done
+    comment: strings.json with common key references.
+  exception-translations:
+    status: todo
+    comment: Not yet implemented.
+  icon-translations:
+    status: exempt
+    comment: Uses default media player icon.
+  reconfiguration-flow:
+    status: todo
+    comment: Not yet implemented.
+  repair-issues:
+    status: exempt
+    comment: No known repair scenarios.
+  stale-devices:
+    status: exempt
+    comment: Devices are tied to config entries.
+
+  # Platinum
+  async-dependency:
+    status: done
+    comment: bose-csp-api uses asyncio.
+  inject-websession:
+    status: exempt
+    comment: Uses raw TCP, not HTTP.
+  strict-typing:
+    status: todo
+    comment: Not yet fully typed.

@@ -1,0 +1,38 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Connect to Bose CSP",
+        "description": "Enter the IP address and default volume limits for your processor. The integration will attempt to auto-discover your zones and sources.",
+        "data": {
+          "host": "[%key:common::config_flow::data::host%]",
+          "min_db": "Default Minimum Volume (dB)",
+          "max_db": "Default Maximum Volume (dB)"
+        }
+      },
+      "select_entities": {
+        "title": "Select Zones and Sources",
+        "description": "Select the zones and sources you want to enable in Home Assistant.",
+        "data": {
+          "zones": "Zones",
+          "sources": "Sources"
+        }
+      },
+      "manual": {
+        "title": "Manual Configuration",
+        "description": "Auto-discovery failed or could not find any zones. Please enter the configured zones and sources manually.",
+        "data": {
+          "zones": "Zones (comma-separated, e.g. Bar, Lobby, Patio)",
+          "sources": "Sources (comma-separated, e.g. Wireless Mic, Sonos, Aux)"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "[%key:common::config_flow::error::cannot_connect%]",
+      "unknown": "[%key:common::config_flow::error::unknown%]"
+    },
+    "abort": {
+      "already_configured": "[%key:common::config_flow::abort::already_configured_device%]"
+    }
+  }
+}

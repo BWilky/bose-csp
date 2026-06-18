@@ -1,0 +1,24 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Connect to Bose CSP",
+        "description": "Enter the IP address and zone names for your processor.",
+        "data": {
+          "host": "IP Address",
+          "zones": "Zones (comma-separated, e.g. Bar, Lobby, Patio)",
+          "sources": "Sources (comma-separated, e.g. Wireless Mic, Sonos, Aux)",
+          "min_db": "Minimum Volume (dB)",
+          "max_db": "Maximum Volume (dB)"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Failed to connect. Check IP address and network.",
+      "unknown": "An unknown error occurred."
+    },
+    "abort": {
+      "already_configured": "This Bose CSP device is already configured."
+    }
+  }
+}
