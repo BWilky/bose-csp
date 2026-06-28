@@ -26,7 +26,7 @@ from .coordinator import BoseCSPConfigEntry, BoseCSPCoordinator, BoseCSPData
 
 _LOGGER = logging.getLogger(__name__)
 
-PLATFORMS: list[Platform] = [Platform.MEDIA_PLAYER]
+PLATFORMS: list[Platform] = [Platform.MEDIA_PLAYER, Platform.SWITCH]
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: BoseCSPConfigEntry) -> bool:

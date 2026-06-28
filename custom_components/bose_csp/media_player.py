@@ -118,6 +118,12 @@ class BoseCSPZone(BoseCSPEntity, MediaPlayerEntity):
                 )
                 self._attr_source = "Source %s" % source_index
 
+        # AutoVolume: surface as an attribute. While On, the device controls the
+        # level and rejects manual gain sets (the library no-ops them).
+        self._attr_extra_state_attributes = {
+            "auto_volume": zone_state.auto_volume
+        }
+
         # State
         self._attr_state = MediaPlayerState.ON
 

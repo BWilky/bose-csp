@@ -198,3 +198,23 @@ async def test_media_player_availability(
 
     state_bar = hass.states.get("media_player.bose_csp_bar")
     assert state_bar.state == "unavailable"
+
+
+async def test_media_player_auto_volume_attribute(
+    hass: HomeAssistant, mock_device
+) -> None:
+    """AutoVolume state is exposed as a media_player attribute."""
+    mock_device.get_all_states.return_value = {
+        "Bar": ZoneState(volume=-12.0, current_source=1, auto_volume=True),
+        "Patio": ZoneState(volume=-20.0, current_source=2, auto_volume=False),
+    }
+    await setup_integration(hass, mock_device)
+
+    assert (
+        hass.states.get("media_player.bose_csp_bar").attributes.get("auto_volume")
+        is True
+    )
+    assert (
+        hass.states.get("media_player.bose_csp_patio").attributes.get("auto_volume")
+        is False
+    )
