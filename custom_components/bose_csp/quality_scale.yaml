@@ -6,8 +6,10 @@ rules:
   appropriate-polling:
     status: done
     comment: |
-      Integration uses local_push via TCP callbacks.
-      No polling interval is set on the coordinator.
+      The device speaks a request/response protocol with no unsolicited
+      events, so the library polls it (volume ~5s, mute/source/AV ~30s) over a
+      persistent TCP socket and pushes parsed results into the coordinator via
+      callbacks. iot_class is local_polling accordingly.
   brands:
     status: todo
     comment: Brand assets need to be added to the brands repository.

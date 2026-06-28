@@ -34,7 +34,12 @@ type BoseCSPConfigEntry = ConfigEntry[BoseCSPData]
 
 
 class BoseCSPCoordinator(DataUpdateCoordinator[dict[str, ZoneState]]):
-    """Coordinator for Bose CSP push-based updates."""
+    """Coordinator for Bose CSP state updates.
+
+    The device speaks the request/response SoIP protocol (no unsolicited
+    events), so the library polls it and invokes our callbacks as poll
+    responses are parsed; this coordinator fans those into Home Assistant.
+    """
 
     config_entry: BoseCSPConfigEntry
 
@@ -48,7 +53,7 @@ class BoseCSPCoordinator(DataUpdateCoordinator[dict[str, ZoneState]]):
         self.device = device
 
     async def _async_setup(self) -> None:
-        """Set up the coordinator: connect and subscribe to push updates."""
+        """Set up the coordinator: connect and subscribe to state updates."""
         try:
             await self.device.connect()
         except BoseCSPConnectionError as err:
@@ -60,8 +65,8 @@ class BoseCSPCoordinator(DataUpdateCoordinator[dict[str, ZoneState]]):
 
     @callback
     def _handle_device_update(self, zone_name: str) -> None:
-        """Handle a push update from the device."""
-        _LOGGER.debug("Push update received for zone: %s", zone_name)
+        """Handle a parsed state update from the device poll loop."""
+        _LOGGER.debug("State update received for zone: %s", zone_name)
         self.async_set_updated_data(self.device.get_all_states())
 
     @callback
