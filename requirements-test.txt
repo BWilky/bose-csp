@@ -1,0 +1,6 @@
+# Test dependencies for the Bose CSP custom integration.
+# pytest-homeassistant-custom-component pulls in a matching Home Assistant +
+# pytest plugins. py-bose-csp is the runtime library (pinned to the manifest).
+pytest-homeassistant-custom-component
+pytest-cov
+py-bose-csp==0.3.5
