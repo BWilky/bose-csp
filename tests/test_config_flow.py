@@ -5,9 +5,10 @@ from pybosecsp import BoseCSPConnectionError
 import pytest
 
 from homeassistant.components.bose_csp.const import DOMAIN
-from homeassistant.config_entries import SOURCE_USER
+from homeassistant.config_entries import SOURCE_DHCP, SOURCE_USER
 from homeassistant.core import HomeAssistant
 from homeassistant.data_entry_flow import FlowResultType
+from homeassistant.helpers.service_info.dhcp import DhcpServiceInfo
 
 try:
     from tests.common import MockConfigEntry
@@ -228,4 +229,72 @@ async def test_flow_discovery_zero_limits_fallback(
         "Bar": {"min_db": -60.0, "max_db": 12.0},
         "Patio": {"min_db": -60.0, "max_db": 12.0},
     }
+
+
+async def test_dhcp_discovery(
+    hass: HomeAssistant, mock_device, mock_discovery
+) -> None:
+    """A DHCP-discovered device confirms, then runs auto-discovery."""
+    result = await hass.config_entries.flow.async_init(
+        DOMAIN,
+        context={"source": SOURCE_DHCP},
+        data=DhcpServiceInfo(
+            ip="10.50.0.70", hostname="csp-1248", macaddress="aabbccddeeff"
+        ),
+    )
+    assert result["type"] is FlowResultType.FORM
+    assert result["step_id"] == "discovery_confirm"
+
+    result = await hass.config_entries.flow.async_configure(result["flow_id"], {})
+    assert result["step_id"] == "select_entities"
+
+
+async def test_dhcp_discovery_already_configured(
+    hass: HomeAssistant, mock_device
+) -> None:
+    """A DHCP discovery for an existing device aborts."""
+    entry = MockConfigEntry(
+        domain=DOMAIN,
+        unique_id="10.50.0.70",
+        data={"host": "10.50.0.70", "zones": "Bar", "sources": "Sonos"},
+    )
+    entry.add_to_hass(hass)
+
+    result = await hass.config_entries.flow.async_init(
+        DOMAIN,
+        context={"source": SOURCE_DHCP},
+        data=DhcpServiceInfo(
+            ip="10.50.0.70", hostname="csp-1248", macaddress="aabbccddeeff"
+        ),
+    )
+    assert result["type"] is FlowResultType.ABORT
+    assert result["reason"] == "already_configured"
+
+
+async def test_reconfigure(hass: HomeAssistant, mock_device) -> None:
+    """Reconfigure updates the host on the existing entry."""
+    entry = MockConfigEntry(
+        domain=DOMAIN,
+        unique_id="10.50.0.70",
+        data={
+            "host": "10.50.0.70",
+            "zones": "Bar",
+            "sources": "Sonos",
+            "min_db": -60.0,
+            "max_db": 12.0,
+        },
+    )
+    entry.add_to_hass(hass)
+
+    result = await entry.start_reconfigure_flow(hass)
+    assert result["type"] is FlowResultType.FORM
+    assert result["step_id"] == "reconfigure"
+
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"], {"host": "10.50.0.99"}
+    )
+    await hass.async_block_till_done()
+    assert result["type"] is FlowResultType.ABORT
+    assert result["reason"] == "reconfigure_successful"
+    assert entry.data["host"] == "10.50.0.99"
 

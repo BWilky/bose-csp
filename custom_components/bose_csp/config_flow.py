@@ -14,6 +14,7 @@ from homeassistant.data_entry_flow import AbortFlow
 from homeassistant.const import CONF_HOST
 from homeassistant.core import callback
 from homeassistant.helpers import selector
+from homeassistant.helpers.service_info.dhcp import DhcpServiceInfo
 
 from .const import (
     CONF_HEALTHCHECK_ENABLED,
@@ -57,64 +58,15 @@ class BoseCSPConfigFlow(ConfigFlow, domain=DOMAIN):
 
         if user_input is not None:
             self._host = user_input[CONF_HOST]
-
             try:
                 await self.async_set_unique_id(self._host)
                 self._abort_if_unique_id_configured()
-
-                # Attempt WebSocket auto-discovery with retries
-                discovery_data = None
-                for attempt in range(4):
-                    try:
-                        discovery_data = await discover_zones_and_sources(self._host)
-                        break
-                    except BoseCSPConnectionError as err:
-                        _LOGGER.warning(
-                            "Auto-discovery attempt %d/4 failed for %s: %s",
-                            attempt + 1,
-                            self._host,
-                            err,
-                        )
-                        if attempt < 3:
-                            await asyncio.sleep(3)
-                        else:
-                            raise err
-            except BoseCSPConnectionError:
-                _LOGGER.warning(
-                    "Auto-discovery failed after 4 attempts. Falling back to manual configuration."
-                )
-                self._discovery_failed = True
-                return await self.async_step_manual()
+                return await self._async_run_discovery()
             except AbortFlow:
                 raise
             except Exception as err:  # pylint: disable=broad-except
                 _LOGGER.exception("Unexpected error during auto-discovery: %s", err)
                 errors["base"] = "unknown"
-                return self.async_show_form(
-                    step_id="user",
-                    data_schema=vol.Schema(
-                        {
-                            vol.Required(CONF_HOST): str,
-                        }
-                    ),
-                    errors=errors,
-                )
-
-            self._discovered_zones = [
-                z for z in discovery_data.get("zones", []) if z.get("enabled")
-            ]
-            self._discovered_sources = [
-                s for s in discovery_data.get("sources", []) if s.get("enabled")
-            ]
-
-            if not self._discovered_zones:
-                _LOGGER.warning(
-                    "No enabled zones discovered. Falling back to manual configuration."
-                )
-                self._discovery_failed = True
-                return await self.async_step_manual()
-
-            return await self.async_step_select_entities()
 
         return self.async_show_form(
             step_id="user",
@@ -124,6 +76,101 @@ class BoseCSPConfigFlow(ConfigFlow, domain=DOMAIN):
                 }
             ),
             errors=errors,
+        )
+
+    async def _async_run_discovery(self) -> ConfigFlowResult:
+        """Auto-discover zones/sources for ``self._host`` and advance the flow.
+
+        Shared by the user and DHCP-discovery paths. Falls back to the manual
+        step when the device can't be reached or exposes no enabled zones.
+        """
+        discovery_data = None
+        try:
+            for attempt in range(4):
+                try:
+                    discovery_data = await discover_zones_and_sources(self._host)
+                    break
+                except BoseCSPConnectionError as err:
+                    _LOGGER.warning(
+                        "Auto-discovery attempt %d/4 failed for %s: %s",
+                        attempt + 1,
+                        self._host,
+                        err,
+                    )
+                    if attempt < 3:
+                        await asyncio.sleep(3)
+                    else:
+                        raise
+        except BoseCSPConnectionError:
+            _LOGGER.warning(
+                "Auto-discovery failed after 4 attempts. Falling back to manual "
+                "configuration."
+            )
+            self._discovery_failed = True
+            return await self.async_step_manual()
+
+        self._discovered_zones = [
+            z for z in discovery_data.get("zones", []) if z.get("enabled")
+        ]
+        self._discovered_sources = [
+            s for s in discovery_data.get("sources", []) if s.get("enabled")
+        ]
+
+        if not self._discovered_zones:
+            _LOGGER.warning(
+                "No enabled zones discovered. Falling back to manual configuration."
+            )
+            self._discovery_failed = True
+            return await self.async_step_manual()
+
+        return await self.async_step_select_entities()
+
+    async def async_step_dhcp(
+        self, discovery_info: DhcpServiceInfo
+    ) -> ConfigFlowResult:
+        """Handle a Bose CSP discovered via DHCP.
+
+        NOTE: the manifest ``dhcp`` hostname matchers are provisional and must be
+        confirmed against a live device's DHCP lease before relying on them.
+        """
+        self._host = discovery_info.ip
+        await self.async_set_unique_id(self._host)
+        self._abort_if_unique_id_configured(updates={CONF_HOST: self._host})
+        self.context["title_placeholders"] = {"host": self._host}
+        return await self.async_step_discovery_confirm()
+
+    async def async_step_discovery_confirm(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Confirm a discovered device, then run auto-discovery."""
+        if user_input is not None:
+            return await self._async_run_discovery()
+
+        return self.async_show_form(
+            step_id="discovery_confirm",
+            description_placeholders={"host": self._host},
+        )
+
+    async def async_step_reconfigure(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Allow changing the device IP address without removing the entry."""
+        entry = self._get_reconfigure_entry()
+        if user_input is not None:
+            return self.async_update_reload_and_abort(
+                entry,
+                data_updates={CONF_HOST: user_input[CONF_HOST]},
+            )
+
+        return self.async_show_form(
+            step_id="reconfigure",
+            data_schema=vol.Schema(
+                {
+                    vol.Required(
+                        CONF_HOST, default=entry.data[CONF_HOST]
+                    ): str,
+                }
+            ),
         )
 
     async def async_step_select_entities(

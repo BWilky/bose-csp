@@ -2,13 +2,18 @@
 
 from __future__ import annotations
 
-from homeassistant.components.sensor import SensorEntity
+from pybosecsp import HEALTH_STATUSES
+
+from homeassistant.components.sensor import SensorDeviceClass, SensorEntity
 from homeassistant.const import EntityCategory
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from .coordinator import BoseCSPConfigEntry
 from .entity import BoseCSPEntity
+
+# Single coordinator-driven sensor; no per-entity polling.
+PARALLEL_UPDATES = 0
 
 
 async def async_setup_entry(
@@ -24,12 +29,14 @@ class BoseCSPHealthSensor(BoseCSPEntity, SensorEntity):
     """Reports the active control-verify "Health Checking" status."""
 
     _attr_entity_category = EntityCategory.DIAGNOSTIC
+    _attr_translation_key = "health"
+    _attr_device_class = SensorDeviceClass.ENUM
+    _attr_options = list(HEALTH_STATUSES)
 
     def __init__(self, coordinator) -> None:
         """Initialize the health sensor (one per device)."""
         super().__init__(coordinator, "health")
         self._attr_unique_id = f"{coordinator.device.host}-health"
-        self._attr_name = "Health Checking"
 
     @property
     def available(self) -> bool:

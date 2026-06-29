@@ -38,17 +38,18 @@ async def test_health_sensor_created_and_updates(
     assert state is not None
     assert state.attributes.get("health_zone") == "Bar"
 
-    # Drive a health-status change through the coordinator callback.
+    # Drive a health-status change through the coordinator callback. The sensor
+    # is an ENUM whose state is the slug (the display text is a translation).
     coordinator = entry.runtime_data.coordinator
     coordinator._handle_health_update("starting")
     await hass.async_block_till_done()
     assert hass.states.get("sensor.bose_csp_health_checking").state == "starting"
 
-    coordinator._handle_health_update("Socket Not Connected")
+    coordinator._handle_health_update("socket_not_connected")
     await hass.async_block_till_done()
     assert (
         hass.states.get("sensor.bose_csp_health_checking").state
-        == "Socket Not Connected"
+        == "socket_not_connected"
     )
 
 
@@ -60,8 +61,8 @@ async def test_health_sensor_available_while_disconnected(
     coordinator = entry.runtime_data.coordinator
 
     coordinator._handle_availability_update(False)
-    coordinator._handle_health_update("Socket Not Connected")
+    coordinator._handle_health_update("socket_not_connected")
     await hass.async_block_till_done()
 
     state = hass.states.get("sensor.bose_csp_health_checking")
-    assert state.state == "Socket Not Connected"  # not "unavailable"
+    assert state.state == "socket_not_connected"  # not "unavailable"

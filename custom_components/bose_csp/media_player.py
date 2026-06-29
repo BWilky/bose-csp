@@ -12,12 +12,17 @@ from homeassistant.components.media_player import (
     MediaPlayerState,
 )
 from homeassistant.core import HomeAssistant, callback
+from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
+from .const import DOMAIN
 from .coordinator import BoseCSPConfigEntry
 from .entity import BoseCSPEntity
 
 _LOGGER = logging.getLogger(__name__)
+
+# Entities are updated from the coordinator; commands need no serialisation.
+PARALLEL_UPDATES = 0
 
 
 async def async_setup_entry(
@@ -141,18 +146,28 @@ class BoseCSPZone(BoseCSPEntity, MediaPlayerEntity):
                 self._zone_name, round(vol_db, 1)
             )
         except BoseCSPCommandError as err:
-            _LOGGER.error(
-                "Failed to set volume for %s: %s", self._zone_name, err
-            )
+            raise HomeAssistantError(
+                translation_domain=DOMAIN,
+                translation_key="set_volume_failed",
+                translation_placeholders={
+                    "zone": self._zone_name,
+                    "error": str(err),
+                },
+            ) from err
 
     async def async_mute_volume(self, mute: bool) -> None:
         """Mute or unmute the volume."""
         try:
             await self.coordinator.device.set_mute(self._zone_name, mute)
         except BoseCSPCommandError as err:
-            _LOGGER.error(
-                "Failed to set mute for %s: %s", self._zone_name, err
-            )
+            raise HomeAssistantError(
+                translation_domain=DOMAIN,
+                translation_key="set_mute_failed",
+                translation_placeholders={
+                    "zone": self._zone_name,
+                    "error": str(err),
+                },
+            ) from err
 
     async def async_select_source(self, source: str) -> None:
         """Select input source."""
@@ -174,6 +189,11 @@ class BoseCSPZone(BoseCSPEntity, MediaPlayerEntity):
                 self._zone_name, source_index
             )
         except BoseCSPCommandError as err:
-            _LOGGER.error(
-                "Failed to select source for %s: %s", self._zone_name, err
-            )
+            raise HomeAssistantError(
+                translation_domain=DOMAIN,
+                translation_key="set_source_failed",
+                translation_placeholders={
+                    "zone": self._zone_name,
+                    "error": str(err),
+                },
+            ) from err

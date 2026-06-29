@@ -3,22 +3,101 @@
     "step": {
       "user": {
         "title": "Connect to Bose CSP",
-        "description": "Enter the IP address and zone names for your processor.",
+        "description": "Enter the IP address of your processor. The integration will attempt to auto-discover your zones and sources.",
         "data": {
-          "host": "IP Address",
+          "host": "[%key:common::config_flow::data::host%]"
+        }
+      },
+      "discovery_confirm": {
+        "title": "Bose CSP discovered",
+        "description": "Do you want to set up the Bose CSP at {host}?"
+      },
+      "reconfigure": {
+        "title": "Reconfigure Bose CSP",
+        "description": "Update the IP address of your processor.",
+        "data": {
+          "host": "[%key:common::config_flow::data::host%]"
+        }
+      },
+      "select_entities": {
+        "title": "Select Zones and Sources",
+        "description": "Select the zones and sources you want to enable in Home Assistant.",
+        "data": {
+          "zones": "Zones",
+          "sources": "Sources"
+        }
+      },
+      "manual": {
+        "title": "Manual Configuration",
+        "description": "Auto-discovery failed or could not find any zones. Please enter the configured zones, sources, and default volume limits manually.",
+        "data": {
           "zones": "Zones (comma-separated, e.g. Bar, Lobby, Patio)",
           "sources": "Sources (comma-separated, e.g. Wireless Mic, Sonos, Aux)",
-          "min_db": "Minimum Volume (dB)",
-          "max_db": "Maximum Volume (dB)"
+          "min_db": "Default Minimum Volume (dB)",
+          "max_db": "Default Maximum Volume (dB)"
         }
       }
     },
     "error": {
-      "cannot_connect": "Failed to connect. Check IP address and network.",
-      "unknown": "An unknown error occurred."
+      "cannot_connect": "[%key:common::config_flow::error::cannot_connect%]",
+      "unknown": "[%key:common::config_flow::error::unknown%]",
+      "discovery_failed": "Auto-discovery failed. Make sure the Web Dashboard is closed in your browser. Enter your zones and sources as comma-separated lists below."
     },
     "abort": {
-      "already_configured": "This Bose CSP device is already configured."
+      "already_configured": "[%key:common::config_flow::abort::already_configured_device%]",
+      "reconfigure_successful": "[%key:common::config_flow::abort::reconfigure_successful%]"
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Bose CSP Settings",
+        "data": {
+          "volume_interval": "Volume Polling Interval (seconds)",
+          "other_interval": "Mute/Source Polling Interval (seconds)",
+          "reconnect_delay": "Reconnection Delay (seconds)",
+          "health_check_enabled": "Health Checking"
+        },
+        "data_description": {
+          "health_check_enabled": "Periodically verifies control of the device with an inaudible micro volume adjustment on a non-AutoVolume zone."
+        }
+      }
+    }
+  },
+  "entity": {
+    "switch": {
+      "autovolume": {
+        "name": "{zone} AutoVolume"
+      }
+    },
+    "sensor": {
+      "health": {
+        "name": "Health Checking",
+        "state": {
+          "disabled": "Disabled",
+          "starting": "Starting",
+          "checking": "Checking",
+          "healthy": "Healthy",
+          "no_free_zone": "Not available - AutoVolume",
+          "socket_not_connected": "Socket Not Connected",
+          "failing": "Failing",
+          "cant_reconnect": "Can't reconnect"
+        }
+      }
+    }
+  },
+  "exceptions": {
+    "set_volume_failed": {
+      "message": "Failed to set volume for {zone}: {error}"
+    },
+    "set_mute_failed": {
+      "message": "Failed to set mute for {zone}: {error}"
+    },
+    "set_source_failed": {
+      "message": "Failed to select source for {zone}: {error}"
+    },
+    "set_auto_volume_failed": {
+      "message": "Failed to set AutoVolume for {zone}: {error}"
     }
   }
 }

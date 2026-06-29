@@ -9,12 +9,17 @@ from pybosecsp import BoseCSPCommandError
 
 from homeassistant.components.switch import SwitchEntity
 from homeassistant.core import HomeAssistant, callback
+from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
+from .const import DOMAIN
 from .coordinator import BoseCSPConfigEntry
 from .entity import BoseCSPEntity
 
 _LOGGER = logging.getLogger(__name__)
+
+# Entities are updated from the coordinator; commands need no serialisation.
+PARALLEL_UPDATES = 0
 
 
 async def async_setup_entry(
@@ -36,13 +41,15 @@ async def async_setup_entry(
 class BoseCSPAutoVolumeSwitch(BoseCSPEntity, SwitchEntity):
     """AutoVolume on/off switch for a single Bose CSP zone."""
 
+    _attr_translation_key = "autovolume"
+
     def __init__(self, coordinator, zone_name: str) -> None:
         """Initialize the AutoVolume switch."""
         super().__init__(coordinator, zone_name)
         # The base entity uses "{host}-{zone}", which the media player already
         # owns; add a suffix so this switch gets a distinct unique_id.
         self._attr_unique_id = f"{coordinator.device.host}-{zone_name}-autovolume"
-        self._attr_name = f"{zone_name} AutoVolume"
+        self._attr_translation_placeholders = {"zone": zone_name}
         self._update_state()
 
     def _update_state(self) -> None:
@@ -69,6 +76,11 @@ class BoseCSPAutoVolumeSwitch(BoseCSPEntity, SwitchEntity):
         try:
             await self.coordinator.device.set_auto_volume(self._zone_name, enabled)
         except BoseCSPCommandError as err:
-            _LOGGER.error(
-                "Failed to set AutoVolume for %s: %s", self._zone_name, err
-            )
+            raise HomeAssistantError(
+                translation_domain=DOMAIN,
+                translation_key="set_auto_volume_failed",
+                translation_placeholders={
+                    "zone": self._zone_name,
+                    "error": str(err),
+                },
+            ) from err

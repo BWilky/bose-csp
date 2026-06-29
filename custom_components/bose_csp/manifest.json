@@ -3,10 +3,16 @@
   "name": "Bose CSP",
   "codeowners": ["@BWilky"],
   "config_flow": true,
+  "dhcp": [
+    { "hostname": "csp-*" },
+    { "hostname": "csp1248*" },
+    { "hostname": "csp428*" },
+    { "hostname": "bose-csp*" }
+  ],
   "documentation": "https://www.home-assistant.io/integrations/bose_csp",
   "integration_type": "device",
   "iot_class": "local_polling",
-  "issue_tracker": "https://github.com/home-assistant/core/issues",
-  "requirements": ["py-bose-csp==0.3.4"],
-  "version": "0.3.4"
+  "quality_scale": "bronze",
+  "requirements": ["py-bose-csp==0.3.5"],
+  "version": "0.3.5"
 }

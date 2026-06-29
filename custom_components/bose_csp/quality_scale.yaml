@@ -76,8 +76,8 @@ rules:
     status: exempt
     comment: No authentication required for this device.
   parallel-updates:
-    status: todo
-    comment: Not yet configured.
+    status: done
+    comment: PARALLEL_UPDATES = 0 on all platforms (coordinator-driven, no per-entity polling).
   test-coverage:
     status: todo
     comment: Tests not yet written.
@@ -96,14 +96,19 @@ rules:
     status: done
     comment: Device info provided with identifiers, manufacturer, model.
   diagnostics:
-    status: todo
-    comment: Diagnostics not yet implemented.
+    status: done
+    comment: diagnostics.py dumps entry/options (host redacted), zone states, health status.
   discovery:
-    status: todo
-    comment: Manual configuration only.
+    status: done
+    comment: >
+      DHCP discovery implemented (async_step_dhcp + confirm). The manifest
+      hostname matchers are provisional and must be confirmed against a live
+      device's DHCP lease.
   discovery-update-info:
     status: todo
-    comment: Not implemented.
+    comment: >
+      Requires a stable (MAC-based) unique_id; the entry currently keys on the
+      host/IP, so a changed IP is not auto-updated yet.
   docs-data-update:
     status: todo
     comment: Documentation not yet written.
@@ -126,26 +131,35 @@ rules:
     status: exempt
     comment: Device zones are configured at setup time.
   entity-category:
-    status: exempt
-    comment: All entities are primary media player entities.
+    status: done
+    comment: >
+      Health sensor uses EntityCategory.DIAGNOSTIC; the media player and
+      AutoVolume switch are primary controls.
   entity-device-class:
-    status: exempt
-    comment: MediaPlayerEntity does not use device classes.
+    status: done
+    comment: >
+      Health sensor uses SensorDeviceClass.ENUM; the media player and switch
+      have no applicable device class.
   entity-disabled-by-default:
     status: exempt
     comment: All entities should be enabled by default.
   entity-translations:
     status: done
-    comment: strings.json with common key references.
+    comment: >
+      Switch and sensor use translation_key + an entity section in
+      strings.json (with sensor state translations); media player names are
+      device-provided zone names.
   exception-translations:
-    status: todo
-    comment: Not yet implemented.
+    status: done
+    comment: >
+      Command handlers raise HomeAssistantError with translation_domain/key;
+      messages defined under exceptions in strings.json.
   icon-translations:
     status: exempt
     comment: Uses default media player icon.
   reconfiguration-flow:
-    status: todo
-    comment: Not yet implemented.
+    status: done
+    comment: async_step_reconfigure allows changing the device IP without re-adding.
   repair-issues:
     status: exempt
     comment: No known repair scenarios.
@@ -162,4 +176,6 @@ rules:
     comment: Uses raw TCP, not HTTP.
   strict-typing:
     status: todo
-    comment: Not yet fully typed.
+    comment: >
+      Library now ships py.typed; integration to be added to the core
+      .strict-typing list and fully annotated at submission.
