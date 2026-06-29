@@ -6,11 +6,12 @@ things differ when the code is submitted to `home-assistant/core`:
 ## manifest.json
 - **Remove `"version"`.** It is required for custom integrations but is
   forbidden in core manifests (hassfest will fail if present).
-- Do **not** add `"issue_tracker"` (core uses the default HA issue tracker).
+- **Remove `"issue_tracker"`.** It is required by HACS but core uses the default
+  HA issue tracker, so drop it on the core PR.
+- Change `"documentation"` from the GitHub repo to
+  `https://www.home-assistant.io/integrations/bose_csp` (the HACS/custom build
+  points at the repo because the core docs page does not exist yet).
 - Keep `"quality_scale": "bronze"` (raise as higher tiers are met).
-- The `"dhcp"` hostname matchers are **provisional** — confirm them against a
-  real device's DHCP lease (router lease table) before relying on discovery,
-  and adjust/remove as needed.
 
 ## Tests
 - Move tests to `tests/components/bose_csp/`.
@@ -24,11 +25,12 @@ things differ when the code is submitted to `home-assistant/core`:
 - For Platinum `strict-typing`, add `homeassistant.components.bose_csp.*` to the
   core `.strict-typing` list. The library already ships `py.typed`.
 
-## Discovery (discovery-update-info)
-- The config entry currently keys its `unique_id` on the host/IP. To support
-  updating a changed IP on an existing entry (Gold `discovery-update-info`),
-  migrate `unique_id` to the device MAC (`homeassistant.helpers.device_registry.
-  format_mac`) and use `_abort_if_unique_id_configured(updates=...)`.
+## Discovery (not implemented)
+- There is no network discovery: the device exposes no usable mDNS/SSDP service
+  and no stable ID over the control link, and the config entry keys its
+  `unique_id` on the host/IP. The Gold `discovery` / `discovery-update-info`
+  rules remain `todo`; revisit only if a stable device identifier (serial/MAC)
+  becomes available over the device API.
 
 ## External PRs required for merge
 - **Brands**: see `docs/brands/README.md`.

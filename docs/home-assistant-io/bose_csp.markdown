@@ -16,7 +16,6 @@ ha_platforms:
   - media_player
   - sensor
   - switch
-ha_dhcp: true
 ---
 
 The **Bose CSP** {% term integration %} lets you control Bose Professional

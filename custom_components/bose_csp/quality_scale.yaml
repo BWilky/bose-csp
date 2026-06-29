@@ -99,16 +99,13 @@ rules:
     status: done
     comment: diagnostics.py dumps entry/options (host redacted), zone states, health status.
   discovery:
-    status: done
-    comment: >
-      DHCP discovery implemented (async_step_dhcp + confirm). The manifest
-      hostname matchers are provisional and must be confirmed against a live
-      device's DHCP lease.
-  discovery-update-info:
     status: todo
     comment: >
-      Requires a stable (MAC-based) unique_id; the entry currently keys on the
-      host/IP, so a changed IP is not auto-updated yet.
+      Manual configuration only; the device exposes no usable network discovery
+      service (no advertised mDNS/SSDP and no stable ID over the control link).
+  discovery-update-info:
+    status: todo
+    comment: Not implemented (no network discovery; entry keys on host/IP).
   docs-data-update:
     status: todo
     comment: Documentation not yet written.

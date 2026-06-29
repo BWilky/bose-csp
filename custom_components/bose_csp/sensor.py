@@ -9,7 +9,7 @@ from homeassistant.const import EntityCategory
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
-from .coordinator import BoseCSPConfigEntry
+from .coordinator import BoseCSPConfigEntry, BoseCSPCoordinator
 from .entity import BoseCSPEntity
 
 # Single coordinator-driven sensor; no per-entity polling.
@@ -33,7 +33,7 @@ class BoseCSPHealthSensor(BoseCSPEntity, SensorEntity):
     _attr_device_class = SensorDeviceClass.ENUM
     _attr_options = list(HEALTH_STATUSES)
 
-    def __init__(self, coordinator) -> None:
+    def __init__(self, coordinator: BoseCSPCoordinator) -> None:
         """Initialize the health sensor (one per device)."""
         super().__init__(coordinator, "health")
         self._attr_unique_id = f"{coordinator.device.host}-health"

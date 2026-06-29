@@ -13,7 +13,7 @@ from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from .const import DOMAIN
-from .coordinator import BoseCSPConfigEntry
+from .coordinator import BoseCSPConfigEntry, BoseCSPCoordinator
 from .entity import BoseCSPEntity
 
 _LOGGER = logging.getLogger(__name__)
@@ -43,7 +43,7 @@ class BoseCSPAutoVolumeSwitch(BoseCSPEntity, SwitchEntity):
 
     _attr_translation_key = "autovolume"
 
-    def __init__(self, coordinator, zone_name: str) -> None:
+    def __init__(self, coordinator: BoseCSPCoordinator, zone_name: str) -> None:
         """Initialize the AutoVolume switch."""
         super().__init__(coordinator, zone_name)
         # The base entity uses "{host}-{zone}", which the media player already

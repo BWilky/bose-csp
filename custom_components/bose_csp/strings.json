@@ -8,10 +8,6 @@
           "host": "[%key:common::config_flow::data::host%]"
         }
       },
-      "discovery_confirm": {
-        "title": "Bose CSP discovered",
-        "description": "Do you want to set up the Bose CSP at {host}?"
-      },
       "reconfigure": {
         "title": "Reconfigure Bose CSP",
         "description": "Update the IP address of your processor.",

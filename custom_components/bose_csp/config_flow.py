@@ -14,7 +14,6 @@ from homeassistant.data_entry_flow import AbortFlow
 from homeassistant.const import CONF_HOST
 from homeassistant.core import callback
 from homeassistant.helpers import selector
-from homeassistant.helpers.service_info.dhcp import DhcpServiceInfo
 
 from .const import (
     CONF_HEALTHCHECK_ENABLED,
@@ -124,32 +123,6 @@ class BoseCSPConfigFlow(ConfigFlow, domain=DOMAIN):
             return await self.async_step_manual()
 
         return await self.async_step_select_entities()
-
-    async def async_step_dhcp(
-        self, discovery_info: DhcpServiceInfo
-    ) -> ConfigFlowResult:
-        """Handle a Bose CSP discovered via DHCP.
-
-        NOTE: the manifest ``dhcp`` hostname matchers are provisional and must be
-        confirmed against a live device's DHCP lease before relying on them.
-        """
-        self._host = discovery_info.ip
-        await self.async_set_unique_id(self._host)
-        self._abort_if_unique_id_configured(updates={CONF_HOST: self._host})
-        self.context["title_placeholders"] = {"host": self._host}
-        return await self.async_step_discovery_confirm()
-
-    async def async_step_discovery_confirm(
-        self, user_input: dict[str, Any] | None = None
-    ) -> ConfigFlowResult:
-        """Confirm a discovered device, then run auto-discovery."""
-        if user_input is not None:
-            return await self._async_run_discovery()
-
-        return self.async_show_form(
-            step_id="discovery_confirm",
-            description_placeholders={"host": self._host},
-        )
 
     async def async_step_reconfigure(
         self, user_input: dict[str, Any] | None = None

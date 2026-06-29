@@ -16,7 +16,7 @@ from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from .const import DOMAIN
-from .coordinator import BoseCSPConfigEntry
+from .coordinator import BoseCSPConfigEntry, BoseCSPCoordinator
 from .entity import BoseCSPEntity
 
 _LOGGER = logging.getLogger(__name__)
@@ -64,7 +64,7 @@ class BoseCSPZone(BoseCSPEntity, MediaPlayerEntity):
 
     def __init__(
         self,
-        coordinator,
+        coordinator: BoseCSPCoordinator,
         zone_name: str,
         source_list: list[str],
         min_db: float,
