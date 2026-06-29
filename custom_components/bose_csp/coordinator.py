@@ -51,6 +51,8 @@ class BoseCSPCoordinator(DataUpdateCoordinator[dict[str, ZoneState]]):
             name=DOMAIN,
         )
         self.device = device
+        # Latest health-check status string (see pybosecsp HEALTH_* values).
+        self.health_status: str | None = None
 
     async def _async_setup(self) -> None:
         """Set up the coordinator: connect and subscribe to state updates."""
@@ -62,6 +64,14 @@ class BoseCSPCoordinator(DataUpdateCoordinator[dict[str, ZoneState]]):
             ) from err
         self.device.subscribe_updates(self._handle_device_update)
         self.device.subscribe_availability(self._handle_availability_update)
+        self.device.subscribe_health(self._handle_health_update)
+
+    @callback
+    def _handle_health_update(self, status: str) -> None:
+        """Handle a health-check status change from the device."""
+        _LOGGER.debug("Health status update: %s", status)
+        self.health_status = status
+        self.async_update_listeners()
 
     @callback
     def _handle_device_update(self, zone_name: str) -> None:
@@ -87,4 +97,5 @@ class BoseCSPCoordinator(DataUpdateCoordinator[dict[str, ZoneState]]):
         """Shut down the coordinator and disconnect device."""
         self.device.unsubscribe_updates(self._handle_device_update)
         self.device.unsubscribe_availability(self._handle_availability_update)
+        self.device.unsubscribe_health(self._handle_health_update)
         await super().async_shutdown()

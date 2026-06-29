@@ -11,6 +11,7 @@ from homeassistant.const import CONF_HOST, Platform
 from homeassistant.core import HomeAssistant
 
 from .const import (
+    CONF_HEALTHCHECK_ENABLED,
     CONF_MAX_DB,
     CONF_MIN_DB,
     CONF_OTHER_INTERVAL,
@@ -18,6 +19,7 @@ from .const import (
     CONF_SOURCES,
     CONF_VOLUME_INTERVAL,
     CONF_ZONES,
+    DEFAULT_HEALTHCHECK_ENABLED,
     DEFAULT_OTHER_INTERVAL,
     DEFAULT_RECONNECT_DELAY,
     DEFAULT_VOLUME_INTERVAL,
@@ -26,7 +28,11 @@ from .coordinator import BoseCSPConfigEntry, BoseCSPCoordinator, BoseCSPData
 
 _LOGGER = logging.getLogger(__name__)
 
-PLATFORMS: list[Platform] = [Platform.MEDIA_PLAYER, Platform.SWITCH]
+PLATFORMS: list[Platform] = [
+    Platform.MEDIA_PLAYER,
+    Platform.SWITCH,
+    Platform.SENSOR,
+]
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: BoseCSPConfigEntry) -> bool:
@@ -45,6 +51,20 @@ async def async_setup_entry(hass: HomeAssistant, entry: BoseCSPConfigEntry) -> b
     volume_interval = entry.options.get(CONF_VOLUME_INTERVAL, DEFAULT_VOLUME_INTERVAL)
     other_interval = entry.options.get(CONF_OTHER_INTERVAL, DEFAULT_OTHER_INTERVAL)
     reconnect_delay = entry.options.get(CONF_RECONNECT_DELAY, DEFAULT_RECONNECT_DELAY)
+    health_check_enabled = entry.options.get(
+        CONF_HEALTHCHECK_ENABLED, DEFAULT_HEALTHCHECK_ENABLED
+    )
+
+    # Per-zone (min_db, max_db) so the health-check nudge respects each zone's
+    # floor/ceiling; fall back to the global defaults where not specified.
+    zone_limits_raw = entry.data.get("zone_limits", {})
+    zone_limits = {
+        zone: (
+            zone_limits_raw.get(zone, {}).get("min_db", min_db),
+            zone_limits_raw.get(zone, {}).get("max_db", max_db),
+        )
+        for zone in zones_list
+    }
 
     device = BoseCSPDevice(
         host,
@@ -52,6 +72,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: BoseCSPConfigEntry) -> b
         volume_interval=volume_interval,
         other_interval=other_interval,
         reconnect_delay=reconnect_delay,
+        health_check_enabled=health_check_enabled,
+        zone_limits=zone_limits,
     )
 
     coordinator = BoseCSPCoordinator(hass, device)

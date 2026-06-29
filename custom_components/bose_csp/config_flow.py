@@ -16,6 +16,7 @@ from homeassistant.core import callback
 from homeassistant.helpers import selector
 
 from .const import (
+    CONF_HEALTHCHECK_ENABLED,
     CONF_MAX_DB,
     CONF_MIN_DB,
     CONF_OTHER_INTERVAL,
@@ -23,6 +24,7 @@ from .const import (
     CONF_SOURCES,
     CONF_VOLUME_INTERVAL,
     CONF_ZONES,
+    DEFAULT_HEALTHCHECK_ENABLED,
     DEFAULT_OTHER_INTERVAL,
     DEFAULT_RECONNECT_DELAY,
     DEFAULT_VOLUME_INTERVAL,
@@ -281,6 +283,12 @@ class BoseCSPOptionsFlowHandler(OptionsFlow):
                         CONF_RECONNECT_DELAY, DEFAULT_RECONNECT_DELAY
                     ),
                 ): vol.All(vol.Coerce(int), vol.Range(min=1, max=60)),
+                vol.Optional(
+                    CONF_HEALTHCHECK_ENABLED,
+                    default=self.config_entry.options.get(
+                        CONF_HEALTHCHECK_ENABLED, DEFAULT_HEALTHCHECK_ENABLED
+                    ),
+                ): bool,
             }
         )
 

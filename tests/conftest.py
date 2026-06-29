@@ -20,6 +20,7 @@ import custom_components.bose_csp.coordinator
 import custom_components.bose_csp.config_flow
 import custom_components.bose_csp.media_player
 import custom_components.bose_csp.switch
+import custom_components.bose_csp.sensor
 import custom_components.bose_csp.entity
 
 sys.modules["homeassistant.components.bose_csp"] = custom_bose_csp
@@ -28,6 +29,7 @@ sys.modules["homeassistant.components.bose_csp.coordinator"] = custom_bose_csp.c
 sys.modules["homeassistant.components.bose_csp.config_flow"] = custom_bose_csp.config_flow
 sys.modules["homeassistant.components.bose_csp.media_player"] = custom_bose_csp.media_player
 sys.modules["homeassistant.components.bose_csp.switch"] = custom_bose_csp.switch
+sys.modules["homeassistant.components.bose_csp.sensor"] = custom_bose_csp.sensor
 sys.modules["homeassistant.components.bose_csp.entity"] = custom_bose_csp.entity
 
 from pybosecsp import ZoneState
@@ -71,6 +73,9 @@ def mock_device():
         device.set_mute = AsyncMock()
         device.set_source = AsyncMock()
         device.set_auto_volume = AsyncMock()
+        device.subscribe_health = MagicMock()
+        device.unsubscribe_health = MagicMock()
+        device.health_zone = "Bar"
 
         # Make other mocks return the same instance for consistency
         mock_flow_device.return_value = device
