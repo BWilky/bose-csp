@@ -25,9 +25,12 @@ class BoseCSPData:
 
     device: BoseCSPDevice
     coordinator: BoseCSPCoordinator
+    zones: list[str]
     source_list: list[str]
-    min_db: float
-    max_db: float
+    # Per-zone resolved (min_db, max_db) volume limits, falling back to the
+    # global defaults where a zone has no explicit limits.
+    zone_limits: dict[str, tuple[float, float]]
+    source_mapping: dict[str, int]
 
 
 type BoseCSPConfigEntry = ConfigEntry[BoseCSPData]

@@ -21,10 +21,14 @@ from .const import (
     CONF_MIN_DB,
     CONF_OTHER_INTERVAL,
     CONF_RECONNECT_DELAY,
+    CONF_SOURCE_MAPPING,
     CONF_SOURCES,
     CONF_VOLUME_INTERVAL,
+    CONF_ZONE_LIMITS,
     CONF_ZONES,
     DEFAULT_HEALTHCHECK_ENABLED,
+    DEFAULT_MAX_DB,
+    DEFAULT_MIN_DB,
     DEFAULT_OTHER_INTERVAL,
     DEFAULT_RECONNECT_DELAY,
     DEFAULT_VOLUME_INTERVAL,
@@ -43,8 +47,8 @@ class BoseCSPConfigFlow(ConfigFlow, domain=DOMAIN):
         """Initialize the config flow."""
         super().__init__()
         self._host: str = ""
-        self._min_db: float = -60.0
-        self._max_db: float = 12.0
+        self._min_db: float = DEFAULT_MIN_DB
+        self._max_db: float = DEFAULT_MAX_DB
         self._discovered_zones: list[dict[str, Any]] = []
         self._discovered_sources: list[dict[str, Any]] = []
         self._discovery_failed: bool = False
@@ -186,8 +190,8 @@ class BoseCSPConfigFlow(ConfigFlow, domain=DOMAIN):
                     CONF_SOURCES: ", ".join(selected_sources),
                     CONF_MIN_DB: self._min_db,
                     CONF_MAX_DB: self._max_db,
-                    "zone_limits": zone_limits,
-                    "source_mapping": source_mapping,
+                    CONF_ZONE_LIMITS: zone_limits,
+                    CONF_SOURCE_MAPPING: source_mapping,
                 },
             )
 
@@ -248,8 +252,8 @@ class BoseCSPConfigFlow(ConfigFlow, domain=DOMAIN):
             {
                 vol.Required(CONF_ZONES): str,
                 vol.Required(CONF_SOURCES): str,
-                vol.Optional(CONF_MIN_DB, default=-60.0): vol.Coerce(float),
-                vol.Optional(CONF_MAX_DB, default=12.0): vol.Coerce(float),
+                vol.Optional(CONF_MIN_DB, default=DEFAULT_MIN_DB): vol.Coerce(float),
+                vol.Optional(CONF_MAX_DB, default=DEFAULT_MAX_DB): vol.Coerce(float),
             }
         )
 
@@ -265,16 +269,11 @@ class BoseCSPConfigFlow(ConfigFlow, domain=DOMAIN):
         config_entry: ConfigEntry,
     ) -> BoseCSPOptionsFlowHandler:
         """Get the options flow for this handler."""
-        return BoseCSPOptionsFlowHandler(config_entry)
+        return BoseCSPOptionsFlowHandler()
 
 
 class BoseCSPOptionsFlowHandler(OptionsFlow):
     """Handle options flow for Bose CSP."""
-
-    def __init__(self, config_entry: ConfigEntry) -> None:
-        """Initialize options flow."""
-        super().__init__()
-        self.config_entry = config_entry
 
     async def async_step_init(
         self, user_input: dict[str, Any] | None = None

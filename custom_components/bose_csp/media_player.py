@@ -33,21 +33,12 @@ async def async_setup_entry(
     """Set up Bose CSP media player entities from a config entry."""
     data = entry.runtime_data
     coordinator = data.coordinator
-    source_list = data.source_list
-    min_db = data.min_db
-    max_db = data.max_db
 
-    zones_str = entry.data["zones"]
-    zones_list = [zone.strip() for zone in zones_str.split(",")]
-
-    zone_limits = entry.data.get("zone_limits", {})
     entities = []
-    for zone_name in zones_list:
-        limits = zone_limits.get(zone_name, {})
-        z_min = limits.get("min_db", min_db)
-        z_max = limits.get("max_db", max_db)
+    for zone_name in data.zones:
+        z_min, z_max = data.zone_limits[zone_name]
         entities.append(
-            BoseCSPZone(coordinator, zone_name, source_list, z_min, z_max)
+            BoseCSPZone(coordinator, zone_name, data.source_list, z_min, z_max)
         )
     async_add_entities(entities)
 
@@ -55,7 +46,6 @@ async def async_setup_entry(
 class BoseCSPZone(BoseCSPEntity, MediaPlayerEntity):
     """Representation of a single Bose CSP Zone."""
 
-    _attr_assumed_state = False
     _attr_supported_features = (
         MediaPlayerEntityFeature.VOLUME_SET
         | MediaPlayerEntityFeature.VOLUME_MUTE
@@ -84,7 +74,7 @@ class BoseCSPZone(BoseCSPEntity, MediaPlayerEntity):
 
         self._attr_source_list = source_list
 
-        self._source_mapping = coordinator.config_entry.data.get("source_mapping", {})
+        self._source_mapping = coordinator.config_entry.runtime_data.source_mapping
         self._reverse_source_mapping = {v: k for k, v in self._source_mapping.items()}
 
         # Set initial state from coordinator data

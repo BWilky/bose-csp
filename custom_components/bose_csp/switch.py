@@ -28,13 +28,10 @@ async def async_setup_entry(
     async_add_entities: AddEntitiesCallback,
 ) -> None:
     """Set up Bose CSP AutoVolume switches from a config entry."""
-    coordinator = entry.runtime_data.coordinator
-
-    zones_str = entry.data["zones"]
-    zones_list = [zone.strip() for zone in zones_str.split(",")]
+    data = entry.runtime_data
 
     async_add_entities(
-        BoseCSPAutoVolumeSwitch(coordinator, zone_name) for zone_name in zones_list
+        BoseCSPAutoVolumeSwitch(data.coordinator, zone_name) for zone_name in data.zones
     )
 
 

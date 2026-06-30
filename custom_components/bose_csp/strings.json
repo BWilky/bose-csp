@@ -35,7 +35,6 @@
       }
     },
     "error": {
-      "cannot_connect": "[%key:common::config_flow::error::cannot_connect%]",
       "unknown": "[%key:common::config_flow::error::unknown%]",
       "discovery_failed": "Auto-discovery failed. Make sure the Web Dashboard is closed in your browser. Enter your zones and sources as comma-separated lists below."
     },

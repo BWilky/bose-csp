@@ -16,13 +16,16 @@ from .const import (
     CONF_MIN_DB,
     CONF_OTHER_INTERVAL,
     CONF_RECONNECT_DELAY,
+    CONF_SOURCE_MAPPING,
     CONF_SOURCES,
     CONF_VOLUME_INTERVAL,
+    CONF_ZONE_LIMITS,
     CONF_ZONES,
     DEFAULT_HEALTHCHECK_ENABLED,
     DEFAULT_OTHER_INTERVAL,
     DEFAULT_RECONNECT_DELAY,
     DEFAULT_VOLUME_INTERVAL,
+    SETTLE_DELAY_SECONDS,
 )
 from .coordinator import BoseCSPConfigEntry, BoseCSPCoordinator, BoseCSPData
 
@@ -47,6 +50,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: BoseCSPConfigEntry) -> b
     min_db: float = entry.data[CONF_MIN_DB]
     max_db: float = entry.data[CONF_MAX_DB]
 
+    source_mapping: dict[str, int] = entry.data.get(CONF_SOURCE_MAPPING, {})
+
     # Parse options with defaults
     volume_interval = entry.options.get(CONF_VOLUME_INTERVAL, DEFAULT_VOLUME_INTERVAL)
     other_interval = entry.options.get(CONF_OTHER_INTERVAL, DEFAULT_OTHER_INTERVAL)
@@ -55,9 +60,10 @@ async def async_setup_entry(hass: HomeAssistant, entry: BoseCSPConfigEntry) -> b
         CONF_HEALTHCHECK_ENABLED, DEFAULT_HEALTHCHECK_ENABLED
     )
 
-    # Per-zone (min_db, max_db) so the health-check nudge respects each zone's
-    # floor/ceiling; fall back to the global defaults where not specified.
-    zone_limits_raw = entry.data.get("zone_limits", {})
+    # Per-zone (min_db, max_db), resolved once here and shared by the device
+    # (health-check nudge floor/ceiling) and the media_player entities (dB <->
+    # level scaling); fall back to the global defaults where not specified.
+    zone_limits_raw = entry.data.get(CONF_ZONE_LIMITS, {})
     zone_limits = {
         zone: (
             zone_limits_raw.get(zone, {}).get("min_db", min_db),
@@ -79,15 +85,16 @@ async def async_setup_entry(hass: HomeAssistant, entry: BoseCSPConfigEntry) -> b
     coordinator = BoseCSPCoordinator(hass, device)
 
     # Allow DSP network stack to settle after WebSocket discovery
-    await asyncio.sleep(2)
+    await asyncio.sleep(SETTLE_DELAY_SECONDS)
     await coordinator.async_config_entry_first_refresh()
 
     entry.runtime_data = BoseCSPData(
         device=device,
         coordinator=coordinator,
+        zones=zones_list,
         source_list=source_list,
-        min_db=min_db,
-        max_db=max_db,
+        zone_limits=zone_limits,
+        source_mapping=source_mapping,
     )
 
     # Register options update listener

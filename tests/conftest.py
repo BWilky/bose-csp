@@ -38,11 +38,10 @@ from pybosecsp import ZoneState
 @pytest.fixture
 def mock_device():
     """Mock a BoseCSPDevice."""
+    # config_flow no longer constructs a BoseCSPDevice (connectivity is verified
+    # by the coordinator on first refresh), so only the coordinator and the
+    # __init__ entry point need the device mocked.
     with (
-        patch(
-            "homeassistant.components.bose_csp.config_flow.BoseCSPDevice",
-            autospec=True,
-        ) as mock_flow_device,
         patch(
             "homeassistant.components.bose_csp.coordinator.BoseCSPDevice",
             autospec=True,
@@ -77,8 +76,7 @@ def mock_device():
         device.unsubscribe_health = MagicMock()
         device.health_zone = "Bar"
 
-        # Make other mocks return the same instance for consistency
-        mock_flow_device.return_value = device
+        # Make the other mock return the same instance for consistency
         mock_coord_device.return_value = device
 
         yield device

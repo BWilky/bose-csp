@@ -185,10 +185,13 @@ async def test_options_flow(hass: HomeAssistant) -> None:
         },
     )
     assert result["type"] is FlowResultType.CREATE_ENTRY
+    # health_check_enabled is an Optional in the schema; voluptuous fills its
+    # default (True) when the submitted input omits it.
     assert result["data"] == {
         "volume_interval": 10,
         "other_interval": 60,
         "reconnect_delay": 15,
+        "health_check_enabled": True,
     }
 
 

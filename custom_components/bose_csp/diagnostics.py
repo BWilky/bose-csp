@@ -11,7 +11,7 @@ from homeassistant.core import HomeAssistant
 
 from .coordinator import BoseCSPConfigEntry
 
-TO_REDACT = {CONF_HOST, "host"}
+TO_REDACT = {CONF_HOST}
 
 
 async def async_get_config_entry_diagnostics(
